@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Grid,
@@ -13,23 +13,26 @@ import {
 import "./BeamTab.css";
 
 /**
- * 윗부분 (Vacuum, HighVoltage, Filament, Bias, Emission, Scintillator HV, SpotSize)
- * + 기존 GunAlignment, BeamAlignment, Wobble 섹션을 하나의 컴포넌트로 구성.
+ * BeamTab
+ * - Vacuum, Emission은 1초마다 /api/beam/status에서 GET
+ * - Scintillator ON/OFF 상태는 useState 관리 (className으로 빨간색 배경 등)
+ * - 기타 HV, Filament, Bias, SpotSize 등은 기존처럼 POST
+ * - Gun/Beam/Wobble 슬라이더도 기존처럼 handleSliderChange
  *
- * onLog: 외부에서 로그를 출력할 때 사용 (예: WebSocket 로그 등)
+ * onLog: 외부에서 로그를 출력하기 위한 함수 (예: WebSocket 로그 등)
  */
 const BeamTab = ({ onLog }) => {
-  // 상단부 상태
-  const [vacuum, setVacuum] = useState(100); // Vacuum %
-  const [hvSetting, setHvSetting] = useState("1 kV"); // High Voltage 콤보박스
-  const [hvReading, setHvReading] = useState(33.14); // HV Reading (UI 표시용)
+  // 1) 상단부 상태
+  const [vacuum, setVacuum] = useState(0); // Vacuum %
+  const [hvSetting, setHvSetting] = useState("1 kV");
+  const [hvReading, setHvReading] = useState(33.14); // 단순 표시용
   const [filament, setFilament] = useState(24); // Filament (%)
   const [bias, setBias] = useState(24); // Bias (%)
   const [emission, setEmission] = useState(0); // Emission (µA)
   const [spotSize, setSpotSize] = useState("1"); // Spot Size 콤보박스
-  // Scintillator가 ON인지 OFF인지 관리하는 state
   const [scintillatorOn, setScintillatorOn] = useState(false);
-  // 하단 Gun/Beam/Wobble 슬라이더 상태
+
+  // 2) 하단 Gun/Beam/Wobble 슬라이더
   const [values, setValues] = useState({
     gunX: 2048,
     gunY: 2048,
@@ -38,9 +41,27 @@ const BeamTab = ({ onLog }) => {
     wobble: 30,
   });
 
-  // ------------------- 상단부: API 호출 -------------------
+  // ------------------- Vacuum / Emission 폴링 (1초 간격) -------------------
+  useEffect(() => {
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await fetch("/api/beam/status");
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+        // data: { vacuum: number, emission: number }
+        setVacuum(data.vacuum);
+        setEmission(data.emission);
+      } catch (error) {
+        onLog(`Error fetching beam status: ${error.message}`);
+      }
+    }, 1000);
 
-  // High Voltage Setting 변경
+    return () => clearInterval(intervalId);
+  }, [onLog]);
+
+  // ------------------- 상단부: API 호출들 -------------------
+
+  // (A) High Voltage Setting 변경
   const handleHvChange = async (event) => {
     const newVal = event.target.value;
     setHvSetting(newVal);
@@ -57,13 +78,13 @@ const BeamTab = ({ onLog }) => {
     }
   };
 
-  // HV Reading 단순 표시용 (실제 API 호출이 필요하다면 별도 작성)
+  // HV Reading 단순 표시 (UI에서만 사용)
   const handleHvReadingChange = (newReading) => {
     setHvReading(newReading);
     onLog(`HV Reading updated: ${newReading} kV`);
   };
 
-  // Filament Set
+  // (B) Filament
   const handleFilamentSet = async () => {
     try {
       const response = await fetch("/api/beam/filament", {
@@ -78,7 +99,7 @@ const BeamTab = ({ onLog }) => {
     }
   };
 
-  // Bias Set
+  // (C) Bias
   const handleBiasSet = async () => {
     try {
       const response = await fetch("/api/beam/bias", {
@@ -93,26 +114,23 @@ const BeamTab = ({ onLog }) => {
     }
   };
 
+  // (D) Scintillator ON
   const handleScintOn = async () => {
     try {
-      // 실제 API 예: /api/beam/scintillator_hv { on: true }
       const response = await fetch("/api/beam/scintillator_hv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ on: true }),
       });
       if (!response.ok) throw new Error("Scintillator ON failed");
-
-      // 상태 갱신 → CSS 클래스 바뀜
       setScintillatorOn(true);
-
       onLog("Scintillator HV ON");
     } catch (error) {
       onLog(`Error: ${error.message}`);
     }
   };
 
-  // OFF 버튼 클릭
+  // (E) Scintillator OFF
   const handleScintOff = async () => {
     try {
       const response = await fetch("/api/beam/scintillator_hv", {
@@ -121,10 +139,7 @@ const BeamTab = ({ onLog }) => {
         body: JSON.stringify({ on: false }),
       });
       if (!response.ok) throw new Error("Scintillator OFF failed");
-
-      // 상태 갱신 → CSS 클래스 바뀜
       setScintillatorOn(false);
-
       onLog("Scintillator HV OFF");
     } catch (error) {
       onLog(`Error: ${error.message}`);
@@ -144,7 +159,7 @@ const BeamTab = ({ onLog }) => {
     }
   };
 
-  // Spot Size 변경
+  // (F) Spot Size
   const handleSpotSizeChange = async (event) => {
     const newVal = event.target.value;
     setSpotSize(newVal);
@@ -172,9 +187,7 @@ const BeamTab = ({ onLog }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, value }),
       });
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      if (!response.ok) throw new Error("Network response was not ok");
     } catch (error) {
       onLog(`Error: Failed to update ${name} - ${error.message}`);
     }
@@ -186,9 +199,7 @@ const BeamTab = ({ onLog }) => {
       const response = await fetch(`/api/beam/auto/${type}`, {
         method: "POST",
       });
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      if (!response.ok) throw new Error("Network response was not ok");
       onLog(`${type} Auto initiated`);
     } catch (error) {
       onLog(`Error: Failed to execute ${type} Auto - ${error.message}`);
@@ -215,20 +226,12 @@ const BeamTab = ({ onLog }) => {
         {/* Vacuum */}
         <Grid container spacing={1} alignItems="center">
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography">Vacuum</Typography>
+            <Typography>Vacuum</Typography>
           </Grid>
           <Grid item xs={10}>
-            <LinearProgress
-              variant="determinate"
-              value={vacuum}
-              style={{ width: "100%" }}
-            />
-            <Typography
-              className="beam-tab-typography"
-              align="right"
-              style={{ marginTop: "-16px" }}
-            >
-              {vacuum}%
+            <LinearProgress variant="determinate" value={vacuum} />
+            <Typography align="right" style={{ marginTop: "-16px" }}>
+              {vacuum.toFixed(1)}%
             </Typography>
           </Grid>
         </Grid>
@@ -238,9 +241,7 @@ const BeamTab = ({ onLog }) => {
         {/* High Voltage Setting */}
         <Grid container spacing={1} alignItems="center">
           <Grid item xs={4}>
-            <Typography className="beam-tab-typography">
-              High Voltage Setting
-            </Typography>
+            <Typography>High Voltage Setting</Typography>
           </Grid>
           <Grid item xs={3}>
             <Select
@@ -259,10 +260,9 @@ const BeamTab = ({ onLog }) => {
             </Select>
           </Grid>
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography">Reading</Typography>
+            <Typography>Reading</Typography>
           </Grid>
           <Grid item xs={2}>
-            {/* 단순 숫자 표시 (예: hvReading) */}
             <Paper
               style={{ padding: "4px", textAlign: "center", minWidth: "40px" }}
             >
@@ -270,7 +270,7 @@ const BeamTab = ({ onLog }) => {
             </Paper>
           </Grid>
           <Grid item xs={1}>
-            <Typography className="beam-tab-typography">kV</Typography>
+            <Typography>kV</Typography>
           </Grid>
         </Grid>
       </Paper>
@@ -279,14 +279,10 @@ const BeamTab = ({ onLog }) => {
         {/* Filament */}
         <Grid container spacing={1} alignItems="center">
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography">Filament</Typography>
+            <Typography>Filament</Typography>
           </Grid>
           <Grid item xs={6}>
-            <LinearProgress
-              variant="determinate"
-              value={filament}
-              style={{ width: "100%" }}
-            />
+            <LinearProgress variant="determinate" value={filament} />
             <Typography
               align="right"
               style={{ marginTop: "-16px", fontSize: "0.75rem" }}
@@ -296,7 +292,6 @@ const BeamTab = ({ onLog }) => {
           </Grid>
           <Grid item xs={4}>
             <Button
-              className="beam-tab-focus-button"
               variant="contained"
               size="small"
               style={{ marginLeft: "4px" }}
@@ -312,14 +307,10 @@ const BeamTab = ({ onLog }) => {
         {/* Bias */}
         <Grid container spacing={1} alignItems="center">
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography">Bias</Typography>
+            <Typography>Bias</Typography>
           </Grid>
           <Grid item xs={6}>
-            <LinearProgress
-              variant="determinate"
-              value={bias}
-              style={{ width: "100%" }}
-            />
+            <LinearProgress variant="determinate" value={bias} />
             <Typography
               align="right"
               style={{ marginTop: "-16px", fontSize: "0.75rem" }}
@@ -329,7 +320,6 @@ const BeamTab = ({ onLog }) => {
           </Grid>
           <Grid item xs={4}>
             <Button
-              className="beam-tab-focus-button"
               variant="contained"
               size="small"
               style={{ marginLeft: "4px" }}
@@ -345,25 +335,23 @@ const BeamTab = ({ onLog }) => {
         {/* Emission */}
         <Grid container spacing={1} alignItems="center">
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography">Emission</Typography>
+            <Typography>Emission</Typography>
           </Grid>
           <Grid item xs={10}>
-            <Typography style={{ fontSize: "0.75rem" }}>
-              {emission}[µA]
-            </Typography>
+            <Typography>{emission.toFixed(1)} µA</Typography>
           </Grid>
         </Grid>
       </Paper>
 
       <Paper className="beam-tab-item">
-        {/* Scintillator HV (가로 배치) */}
+        {/* Scintillator HV (2줄 배치) */}
         <Grid container spacing={1} alignItems="center">
+          {/* 첫 줄: ON/OFF */}
           <Grid item>
-            <Typography className="beam-tab-typography">
-              Scintillator HV
-            </Typography>
+            <Typography>Scintillator HV</Typography>
           </Grid>
           <Grid item>
+            {/* ON 버튼 */}
             <Button
               variant="contained"
               size="small"
@@ -376,30 +364,28 @@ const BeamTab = ({ onLog }) => {
             </Button>
           </Grid>
           <Grid item>
+            {/* OFF 버튼 */}
             <Button
               variant="contained"
               size="small"
               onClick={handleScintOff}
               className={
-                scintillatorOn ? "scintillator-on" : "scintillator-off"
+                scintillatorOn ? "scintillator-off" : "scintillator-on"
               }
             >
               OFF
             </Button>
           </Grid>
+
+          {/* 줄바꿈 */}
           <Grid item xs={12} />
+
+          {/* 둘째 줄: Filament Time */}
           <Grid item>
-            <Typography className="beam-tab-typography">
-              Filament Time
-            </Typography>
+            <Typography>Filament Time</Typography>
           </Grid>
           <Grid item>
-            <Button
-              className="beam-tab-wobble-button"
-              variant="contained"
-              size="small"
-              onClick={handleReset}
-            >
+            <Button variant="contained" size="small" onClick={handleReset}>
               Reset
             </Button>
           </Grid>
@@ -410,7 +396,7 @@ const BeamTab = ({ onLog }) => {
         {/* Spot Size */}
         <Grid container spacing={1} alignItems="center">
           <Grid item xs={3}>
-            <Typography className="beam-tab-typography">Spot Size</Typography>
+            <Typography>Spot Size</Typography>
           </Grid>
           <Grid item xs={9}>
             <Select
@@ -432,11 +418,7 @@ const BeamTab = ({ onLog }) => {
       {/* -------------------------- 아래쪽 (Gun/Beam/Wobble) -------------------------- */}
       <Paper className="beam-tab-item">
         {/* Gun Alignment */}
-        <Typography
-          variant="subtitle1"
-          className="beam-tab-typography"
-          sx={{ fontWeight: "bold" }}
-        >
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
           Gun Alignment
         </Typography>
         <Button
@@ -450,7 +432,7 @@ const BeamTab = ({ onLog }) => {
         </Button>
         <Grid container spacing={0.5} alignItems="center">
           <Grid item xs={3}>
-            <Typography className="beam-tab-typography">Gun X</Typography>
+            <Typography>Gun X</Typography>
           </Grid>
           <Grid item xs={7}>
             <Slider
@@ -463,13 +445,11 @@ const BeamTab = ({ onLog }) => {
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography" align="right">
-              {values.gunX}
-            </Typography>
+            <Typography align="right">{values.gunX}</Typography>
           </Grid>
 
           <Grid item xs={3}>
-            <Typography className="beam-tab-typography">Gun Y</Typography>
+            <Typography>Gun Y</Typography>
           </Grid>
           <Grid item xs={7}>
             <Slider
@@ -482,20 +462,14 @@ const BeamTab = ({ onLog }) => {
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography" align="right">
-              {values.gunY}
-            </Typography>
+            <Typography align="right">{values.gunY}</Typography>
           </Grid>
         </Grid>
       </Paper>
 
       <Paper className="beam-tab-item">
         {/* Beam Alignment */}
-        <Typography
-          variant="subtitle1"
-          className="beam-tab-typography"
-          sx={{ fontWeight: "bold" }}
-        >
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
           Beam Alignment
         </Typography>
         <Button
@@ -509,7 +483,7 @@ const BeamTab = ({ onLog }) => {
         </Button>
         <Grid container spacing={0.5} alignItems="center">
           <Grid item xs={3}>
-            <Typography className="beam-tab-typography">Beam X</Typography>
+            <Typography>Beam X</Typography>
           </Grid>
           <Grid item xs={7}>
             <Slider
@@ -522,13 +496,11 @@ const BeamTab = ({ onLog }) => {
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography" align="right">
-              {values.beamX}
-            </Typography>
+            <Typography align="right">{values.beamX}</Typography>
           </Grid>
 
           <Grid item xs={3}>
-            <Typography className="beam-tab-typography">Beam Y</Typography>
+            <Typography>Beam Y</Typography>
           </Grid>
           <Grid item xs={7}>
             <Slider
@@ -541,20 +513,14 @@ const BeamTab = ({ onLog }) => {
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography" align="right">
-              {values.beamY}
-            </Typography>
+            <Typography align="right">{values.beamY}</Typography>
           </Grid>
         </Grid>
       </Paper>
 
       <Paper className="beam-tab-item">
         {/* Wobble */}
-        <Typography
-          variant="subtitle1"
-          className="beam-tab-typography"
-          sx={{ fontWeight: "bold" }}
-        >
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
           Wobble
         </Typography>
         <Button
@@ -568,7 +534,7 @@ const BeamTab = ({ onLog }) => {
         </Button>
         <Grid container spacing={0.5} alignItems="center">
           <Grid item xs={3}>
-            <Typography className="beam-tab-typography">Wobble</Typography>
+            <Typography>Wobble</Typography>
           </Grid>
           <Grid item xs={7}>
             <Slider
@@ -581,9 +547,7 @@ const BeamTab = ({ onLog }) => {
             />
           </Grid>
           <Grid item xs={2}>
-            <Typography className="beam-tab-typography" align="right">
-              {values.wobble}
-            </Typography>
+            <Typography align="right">{values.wobble}</Typography>
           </Grid>
         </Grid>
       </Paper>
