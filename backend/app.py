@@ -250,6 +250,7 @@ async def get_current_state():
         "beam": current_state["beam"]
     }
 
+
 # ---------------------
 # 메인 실행
 # ---------------------
