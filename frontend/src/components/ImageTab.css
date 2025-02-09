@@ -1,0 +1,121 @@
+/* ImageTab.css */
+
+/* 컨테이너 */
+.image-tab-container {
+  padding: 4px; /* theme.spacing(0.5) 가 약 4px라고 가정 */
+  max-width: 400px;
+}
+
+/* Item (Paper) */
+.image-tab-item {
+  padding: 4px;
+  margin-bottom: 4px;
+}
+
+/* Typography (텍스트) */
+.image-tab-typography {
+  font-size: 0.75rem;
+  margin-bottom: 2px;
+}
+
+/* Focus 그룹 슬라이더 (빨간색 계열) */
+.image-tab-focus-slider {
+  padding: 4px 0;
+}
+.image-tab-focus-slider .MuiSlider-thumb {
+  height: 12px;
+  width: 12px;
+}
+.image-tab-focus-slider .MuiSlider-rail {
+  height: 3px;
+}
+.image-tab-focus-slider .MuiSlider-track {
+  height: 3px;
+  background-color: #ff6666;
+}
+
+/* Stigmator 그룹 슬라이더 (초록색 계열) */
+.image-tab-stigmator-slider {
+  padding: 4px 0;
+}
+.image-tab-stigmator-slider .MuiSlider-thumb {
+  height: 12px;
+  width: 12px;
+}
+.image-tab-stigmator-slider .MuiSlider-rail {
+  height: 3px;
+}
+.image-tab-stigmator-slider .MuiSlider-track {
+  height: 3px;
+  background-color: #66cc66;
+}
+
+/* Contrast & Brightness 그룹 슬라이더 (파란색 계열) */
+.image-tab-cb-slider {
+  padding: 4px 0;
+}
+.image-tab-cb-slider .MuiSlider-thumb {
+  height: 12px;
+  width: 12px;
+}
+.image-tab-cb-slider .MuiSlider-rail {
+  height: 3px;
+}
+.image-tab-cb-slider .MuiSlider-track {
+  height: 3px;
+  background-color: #6666ff;
+}
+
+/* Image Shift 그룹 슬라이더 (주황색 계열) */
+.image-tab-shift-slider {
+  padding: 4px 0;
+}
+.image-tab-shift-slider .MuiSlider-thumb {
+  height: 12px;
+  width: 12px;
+}
+.image-tab-shift-slider .MuiSlider-rail {
+  height: 3px;
+}
+.image-tab-shift-slider .MuiSlider-track {
+  height: 3px;
+  background-color: #ff9900;
+}
+
+/* 버튼 스타일 */
+
+/* All Auto 버튼 */
+.image-tab-all-button {
+  min-width: 60px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background-color: #ff0000 !important;
+  color: black !important;
+}
+
+/* Focus 그룹 버튼 */
+.image-tab-focus-button {
+  min-width: 60px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background-color: #ffcccc !important;
+  color: black !important;
+}
+
+/* Stigmator 그룹 버튼 */
+.image-tab-stigmator-button {
+  min-width: 60px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background-color: #ccffcc !important;
+  color: black !important;
+}
+
+/* Contrast & Brightness 그룹 버튼 */
+.image-tab-cb-button {
+  min-width: 60px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background-color: #ccccff !important;
+  color: black !important;
+}

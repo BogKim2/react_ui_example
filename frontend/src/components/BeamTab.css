@@ -1,0 +1,119 @@
+/* BeamTab.css */
+
+/* 컨테이너 스타일 */
+.beam-tab-container {
+  padding: 4px; /* theme.spacing(0.5) = 4px */
+  max-width: 600px; /* 예: 상단 요소들로 UI가 넓어질 수 있으니 조정 가능 */
+}
+
+/* Item (Paper) 스타일 */
+.beam-tab-item {
+  padding: 4px;
+  margin-bottom: 4px;
+}
+
+/* Typography 스타일 */
+.beam-tab-typography {
+  font-size: 0.75rem;
+  margin-bottom: 2px;
+}
+
+/* 슬라이더 공통 스타일 (padding 등은 개별 클래스로 적용) */
+
+/* Gun 그룹 슬라이더 (빨간색 계열) */
+.beam-tab-gun-slider {
+  padding: 4px 0;
+}
+.beam-tab-gun-slider .MuiSlider-thumb {
+  height: 12px;
+  width: 12px;
+}
+.beam-tab-gun-slider .MuiSlider-rail {
+  height: 3px;
+}
+.beam-tab-gun-slider .MuiSlider-track {
+  height: 3px;
+  background-color: #ff6666;
+}
+
+/* Beam 그룹 슬라이더 (녹색 계열) */
+.beam-tab-beam-slider {
+  padding: 4px 0;
+}
+.beam-tab-beam-slider .MuiSlider-thumb {
+  height: 12px;
+  width: 12px;
+}
+.beam-tab-beam-slider .MuiSlider-rail {
+  height: 3px;
+}
+.beam-tab-beam-slider .MuiSlider-track {
+  height: 3px;
+  background-color: #66cc66;
+}
+
+/* Wobble 그룹 슬라이더 (파란색 계열) */
+.beam-tab-wobble-slider {
+  padding: 4px 0;
+}
+.beam-tab-wobble-slider .MuiSlider-thumb {
+  height: 12px;
+  width: 12px;
+}
+.beam-tab-wobble-slider .MuiSlider-rail {
+  height: 3px;
+}
+.beam-tab-wobble-slider .MuiSlider-track {
+  height: 3px;
+  background-color: #6666ff;
+}
+
+/* 버튼 스타일 */
+
+/* Gun 그룹 버튼 */
+.beam-tab-gun-button {
+  min-width: 30px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background-color: #ffcccc !important;
+  color: black !important;
+}
+
+/* Beam 그룹 버튼 */
+.beam-tab-beam-button {
+  min-width: 30px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background-color: #ccffcc !important;
+  color: black !important;
+}
+
+/* Wobble 그룹 버튼 */
+.beam-tab-wobble-button {
+  min-width: 30px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background-color: #ccccff !important;
+  color: black !important;
+}
+
+/* Focus 그룹 버튼 (Filament, Bias에서 재활용) */
+.beam-tab-focus-button {
+  min-width: 30px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background-color: #ffcccc !important;
+  color: black !important;
+}
+
+/* ON 상태일 때 빨간색 배경 */
+.scintillator-on {
+  background-color: red !important;
+  color: black !important;
+}
+
+/* OFF 상태일 때 기본(연녹색) 배경 */
+.scintillator-off {
+  background-color: #ccffcc !important;
+  color: black !important;
+}
